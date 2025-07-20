@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic-Tac-Toe Enhanced</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-900 via-gray-900 to-gray-800 min-h-screen flex flex-col items-center justify-center">
+  <div class="bg-gray-950 bg-opacity-90 rounded-2xl shadow-2xl p-8 flex flex-col items-center w-full max-w-md border border-gray-800">
+    <h1 class="text-4xl font-extrabold text-blue-400 mb-8 tracking-tight drop-shadow">Tic-Tac-Toe</h1>
+    <div class="mb-6 flex flex-col items-center w-full">
+      <div class="mb-3 flex flex-col gap-2 w-full">
+        <div class="flex flex-row items-center gap-4 w-full justify-center">
+          <div class="flex items-center gap-2">
+            <label class="text-blue-200 font-semibold whitespace-nowrap">Player X:</label>
+            <input id="playerX" class="rounded px-2 py-1 bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 w-32" value="Player 1" />
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="text-pink-200 font-semibold whitespace-nowrap">Player O:</label>
+            <input id="playerO" class="rounded px-2 py-1 bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-pink-500 w-32" value="Player 2" />
+          </div>
+        </div>
+      </div>
+      <div class="mb-3 flex items-center gap-3 w-full justify-center">
+        <label class="text-white font-semibold">Mode:</label>
+        <select id="mode" class="rounded px-2 py-1 bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="2p">Two Player</option>
+          <option value="ai">Vs AI</option>
+        </select>
+        <button id="startBtn" class="ml-2 bg-gradient-to-r from-blue-600 to-pink-500 text-white px-5 py-1.5 rounded-lg font-bold shadow hover:scale-105 transition-transform">Start Game</button>
+      </div>
+      <div class="flex gap-8 mt-2 w-full justify-center">
+        <span class="text-blue-300 font-bold">Score <span id="scoreX">0</span> (<span id="nameX">Player 1</span>)</span>
+        <span class="text-pink-300 font-bold">Score <span id="scoreO">0</span> (<span id="nameO">Player 2</span>)</span>
+      </div>
+    </div>
+    <div id="game" class="grid grid-cols-3 gap-3 mb-6 w-full max-w-xs mx-auto"></div>
+    <div id="status" class="text-xl font-semibold text-yellow-300 mb-4 min-h-[2.5rem] text-center drop-shadow"></div>
+    <button id="restart" class="bg-gradient-to-r from-blue-600 to-pink-500 text-white px-6 py-2 rounded-lg font-bold shadow hover:scale-105 transition-transform hidden">Restart</button>
+  </div>
+  <script>
+    const gameDiv = document.getElementById('game');
+    const statusDiv = document.getElementById('status');
+    const restartBtn = document.getElementById('restart');
+    const playerXInput = document.getElementById('playerX');
+    const playerOInput = document.getElementById('playerO');
+    const modeSelect = document.getElementById('mode');
+    const startBtn = document.getElementById('startBtn');
+    const scoreXSpan = document.getElementById('scoreX');
+    const scoreOSpan = document.getElementById('scoreO');
+    const nameXSpan = document.getElementById('nameX');
+    const nameOSpan = document.getElementById('nameO');
+
+    let board = Array(9).fill(null);
+    let gameOver = false;
+    let currentPlayer = 'X';
+    let mode = '2p';
+    let playerX = 'Player 1';
+    let playerO = 'Player 2';
+    let scoreX = 0;
+    let scoreO = 0;
+
+    function renderBoard() {
+      gameDiv.innerHTML = '';
+      board.forEach((cell, idx) => {
+        const cellDiv = document.createElement('div');
+        cellDiv.className = `w-20 h-20 flex items-center justify-center text-4xl font-extrabold rounded-xl cursor-pointer select-none shadow-lg transition-all duration-150 ${cell === 'X' ? 'bg-blue-700 text-blue-100' : cell === 'O' ? 'bg-pink-700 text-pink-100' : 'bg-gray-800 text-white hover:bg-gray-700 hover:scale-105'}`;
+        cellDiv.textContent = cell ? cell : '';
+        cellDiv.addEventListener('click', () => handleMove(idx));
+        gameDiv.appendChild(cellDiv);
+      });
+    }
+
+    function handleMove(idx) {
+      if (gameOver || board[idx]) return;
+      board[idx] = currentPlayer;
+      updateBoard();
+      const winner = checkWinner(board);
+      if (winner) {
+        endGame(winner);
+      } else if (mode === 'ai' && currentPlayer === 'X') {
+        currentPlayer = 'O';
+        statusDiv.textContent = `${playerO}'s (O) turn`;
+        setTimeout(aiMove, 400);
+      } else {
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        statusDiv.textContent = `${currentPlayer === 'X' ? playerX : playerO}'s (${currentPlayer}) turn`;
+      }
+    }
+
+    function aiMove() {
+      // First, check for immediate winning move
+      for (let i = 0; i < 9; i++) {
+        if (!board[i]) {
+          board[i] = 'O';
+          if (checkWinner(board) === 'O') {
+            updateBoard();
+            endGame('O');
+            return;
+          }
+          board[i] = null;
+        }
+      }
+      // If no immediate win, use minimax
+      let bestScore = -Infinity;
+      let move = null;
+      for (let i = 0; i < 9; i++) {
+        if (!board[i]) {
+          board[i] = 'O';
+          let score = minimax(board, 0, false);
+          board[i] = null;
+          if (score > bestScore) {
+            bestScore = score;
+            move = i;
+          }
+        }
+      }
+      if (move !== null) {
+        board[move] = 'O';
+        updateBoard();
+        const winner = checkWinner(board);
+        if (winner) {
+          endGame(winner);
+        } else {
+          currentPlayer = 'X';
+          statusDiv.textContent = `${playerX}'s (X) turn`;
+        }
+      }
+    }
+
+    function minimax(b, depth, isMax) {
+      const winner = checkWinner(b);
+      if (winner === 'O') return 1;
+      if (winner === 'X') return -1;
+      if (winner === 'Draw') return 0;
+      if (isMax) {
+        let best = -Infinity;
+        for (let i = 0; i < 9; i++) {
+          if (!b[i]) {
+            b[i] = 'O';
+            best = Math.max(best, minimax(b, depth + 1, false));
+            b[i] = null;
+          }
+        }
+        return best;
+      } else {
+        let best = Infinity;
+        for (let i = 0; i < 9; i++) {
+          if (!b[i]) {
+            b[i] = 'X';
+            best = Math.min(best, minimax(b, depth + 1, true));
+            b[i] = null;
+          }
+        }
+        return best;
+      }
+    }
+
+    function updateBoard() {
+      renderBoard();
+    }
+
+    function endGame(winner) {
+      gameOver = true;
+      if (winner === 'Draw') {
+        statusDiv.textContent = "It's a draw!";
+      } else {
+        statusDiv.textContent = `${winner === 'X' ? playerX : playerO} (${winner}) wins!`;
+        if (winner === 'X') {
+          scoreX++;
+          scoreXSpan.textContent = scoreX;
+        } else if (winner === 'O') {
+          scoreO++;
+          scoreOSpan.textContent = scoreO;
+        }
+      }
+      restartBtn.classList.remove('hidden');
+    }
+
+    function checkWinner(b) {
+      const winCombos = [
+        [0,1,2], [3,4,5], [6,7,8],
+        [0,3,6], [1,4,7], [2,5,8],
+        [0,4,8], [2,4,6]
+      ];
+      for (const combo of winCombos) {
+        const [a, b1, c] = combo;
+        if (b[a] && b[a] === b[b1] && b[a] === b[c]) {
+          return b[a];
+        }
+      }
+      if (b.every(cell => cell)) return 'Draw';
+      return null;
+    }
+
+    restartBtn.addEventListener('click', () => {
+      board = Array(9).fill(null);
+      gameOver = false;
+      currentPlayer = 'X';
+      statusDiv.textContent = `${playerX}'s (X) turn`;
+      restartBtn.classList.add('hidden');
+      renderBoard();
+    });
+
+    startBtn.addEventListener('click', () => {
+      playerX = playerXInput.value || 'Player 1';
+      playerO = playerOInput.value || (modeSelect.value === 'ai' ? 'AI' : 'Player 2');
+      nameXSpan.textContent = playerX;
+      nameOSpan.textContent = playerO;
+      mode = modeSelect.value;
+      board = Array(9).fill(null);
+      gameOver = false;
+      currentPlayer = 'X';
+      statusDiv.textContent = `${playerX}'s (X) turn`;
+      restartBtn.classList.add('hidden');
+      renderBoard();
+    });
+
+    // Initial render
+    statusDiv.textContent = `${playerX}'s (X) turn`;
+    renderBoard();
+  </script>
+</body>
+</html> 

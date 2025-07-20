@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin />
+    <link
+      rel="stylesheet"
+      as="style"
+      onload="this.rel='stylesheet'"
+      href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;700;900&family=Noto+Sans:wght@400;500;700;900"
+    />
+    <title>Chatbot</title>
+    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const input = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const chatContainer = document.getElementById('chat-container');
+        function appendMessage(sender, text) {
+          const msgDiv = document.createElement('div');
+          msgDiv.className = sender === 'User' ? 'flex items-end gap-3 p-4 justify-end' : 'flex items-end gap-3 p-4';
+          msgDiv.innerHTML = sender === 'User'
+            ? `<div class="flex flex-1 flex-col gap-1 items-end"><p class="text-[#adadad] text-[13px] font-normal leading-normal max-w-[360px] text-right">User</p><p class="text-base font-normal leading-normal flex max-w-[360px] rounded-xl px-4 py-3 bg-black text-white">${text}</p></div><div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 shrink-0" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCIQfjMeLkuSsaiADwqYmiJBdh-YZ78-cWzq7qbw6tsKP4sM_fD_XshGvpdRY92S62N1Zn-lGIs60EJgxsnkBeNzVUHX87SKKkqbiuOwpuuuTe67sUOZju033dB9sTl_O-S90yXuMRJgZ3ysbn9hbrahOSO5gF2NadWeljd2XLZzHXIFpksWULhg1dlTuPmnlgdEHmgkyylSWBqKfoDKH83sdmeRN7ZS5KGh8JOkiIvOezzedbywYQlJW-hdxVWoeJvdqGBJvpiVc8");'></div>`
+            : `<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 shrink-0" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBbxDWk1BBrPgIUbY_4tFk9Kl3sRZEdqPEZ4WDdyf0QsCfDgZsKWHfzE0jG7IiBe_YAnqZ-4RpqgZ6FzeHMzCIGZIlfmq5vyUCvOwIsM_Rumb-qBoqwYVk3Od61oHcHUPcipSG4uYRzSM0eh3FrsLKhkyJOl3-KMtyjDAH4HZAFHrXgnK6FklW5jE5UnqKpCnrobANETgQmX5ISMjQJbaJW_n6iZkAddpVXdMR5wfUxSS_zzROaVMynX4kD4IVqud8tYmnB8z7Jk4Y");'></div><div class="flex flex-1 flex-col gap-1 items-start"><p class="text-[#adadad] text-[13px] font-normal leading-normal max-w-[360px]">Bot</p><p class="text-base font-normal leading-normal flex max-w-[360px] rounded-xl px-4 py-3 bg-[#363636] text-white">${text}</p></div>`;
+          chatContainer.appendChild(msgDiv);
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        sendBtn.addEventListener('click', async function () {
+          const userText = input.value.trim();
+          if (!userText) return;
+          appendMessage('User', userText);
+          input.value = '';
+          const res = await fetch('/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: userText })
+          });
+          const data = await res.json();
+          appendMessage('Bot', data.response);
+        });
+        input.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') sendBtn.click();
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <div class="relative flex size-full min-h-screen flex-col bg-[#1a1a1a] dark group/design-root overflow-x-hidden" style='font-family: Inter, "Noto Sans", sans-serif;'>
+      <div class="layout-container flex h-full grow flex-col">
+        <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#363636] px-10 py-3">
+          <div class="flex items-center gap-4 text-white">
+            <div class="size-4">
+              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M42.4379 44C42.4379 44 36.0744 33.9038 41.1692 24C46.8624 12.9336 42.2078 4 42.2078 4L7.01134 4C7.01134 4 11.6577 12.932 5.96912 23.9969C0.876273 33.9029 7.27094 44 7.27094 44L42.4379 44Z" fill="currentColor"></path>
+              </svg>
+            </div>
+            <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Chatbot</h2>
+          </div>
+        </header>
+        <div class="px-40 flex flex-1 justify-center py-5">
+          <div class="layout-content-container flex flex-col max-w-[960px] flex-1">
+            <div id="chat-container" class="flex flex-col w-full h-[500px] overflow-y-auto"></div>
+            <div class="flex items-center px-4 py-3 gap-3 @container">
+              <label class="flex flex-col min-w-40 h-12 flex-1">
+                <div class="flex w-full flex-1 items-stretch rounded-xl h-full">
+                  <input id="user-input" placeholder="Type your message..." class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#363636] focus:border-none h-full placeholder:text-[#adadad] px-4 rounded-r-none border-r-0 pr-2 text-base font-normal leading-normal" />
+                  <div class="flex border-none bg-[#363636] items-center justify-center pr-4 rounded-r-xl border-l-0 !pr-2">
+                    <div class="flex items-center gap-4 justify-end">
+                      <button id="send-btn" class="min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-8 px-4 bg-black text-white text-sm font-medium leading-normal @[480px]:block">
+                        <span class="truncate">Send</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html> 
